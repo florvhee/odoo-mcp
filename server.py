@@ -235,6 +235,27 @@ def update_task(
 
 
 @mcp.tool()
+def create_project(
+    name: str,
+    client_id: int | None = None,
+    instance: str | None = None,
+) -> dict:
+    """Create a new project in Odoo.
+
+    Args:
+        name: Project name.
+        client_id: Optional partner/client ID to associate with the project.
+        instance: Instance name from config.toml. Uses the default if omitted.
+    """
+    _, client = _get_client(instance)
+    values: dict = {"name": name}
+    if client_id is not None:
+        values["partner_id"] = client_id
+    project_id = client.create("project.project", values)
+    return {"success": True, "project_id": project_id, "name": name}
+
+
+@mcp.tool()
 def create_task(
     project_id: int,
     name: str,
@@ -255,6 +276,36 @@ def create_task(
         values["description"] = description
     task_id = client.create("project.task", values)
     return {"success": True, "task_id": task_id, "name": name, "project_id": project_id}
+
+
+@mcp.tool()
+def execute_kw(
+    model: str,
+    method: str,
+    args: list,
+    kwargs: dict | None = None,
+    instance: str | None = None,
+):
+    """Generic escape hatch that calls any Odoo RPC method directly.
+
+    Use this only when no specific tool covers your use case. Requires
+    knowledge of Odoo's internal model names, method names, and domain syntax.
+
+    Args:
+        model: Odoo model technical name (e.g. 'project.task', 'res.partner').
+        method: Method to call (e.g. 'search_read', 'read', 'write', 'create', 'unlink').
+        args: Positional arguments for the method (list).
+        kwargs: Keyword arguments for the method (dict), e.g. {"fields": [...], "limit": 10}.
+        instance: Instance name from config.toml. Uses the default if omitted.
+
+    Examples:
+        List task stages: model='project.task.type', method='search_read',
+            args=[[]], kwargs={'fields': ['id', 'name']}
+        Count tasks in a project: model='project.task', method='search_count',
+            args=[[['project_id', '=', 5]]]
+    """
+    _, client = _get_client(instance)
+    return client.execute_kw(model, method, args, kwargs)
 
 
 # ── Resources ───────────────────────────────────────────────────────────────

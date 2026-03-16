@@ -68,3 +68,10 @@ class OdooClient:
             self._inst.database, uid, self._inst.password,
             model, "search", [domain], {"limit": limit},
         )
+
+    def execute_kw(self, model: str, method: str, args: list, kwargs: dict | None = None):
+        uid = self._auth()
+        return self._models().execute_kw(
+            self._inst.database, uid, self._inst.password,
+            model, method, args, kwargs or {},
+        )
