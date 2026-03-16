@@ -1,0 +1,14 @@
+[default]
+instance = "local"
+
+[instances.local]
+url = "http://localhost:8069"
+database = "mydb"
+username = "admin"
+password = "admin"
+
+[instances.galaadh]
+url = "https://galaadh.example.com"
+database = "galaadh"
+username = "admin"
+password = "your-password-here"

@@ -1,0 +1,8 @@
+[project]
+name = "odoo-mcp"
+version = "0.1.0"
+description = "MCP server for Odoo tasks & projects"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp[cli]>=1.9",
+]
