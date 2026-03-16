@@ -40,6 +40,16 @@ def _get_client(instance_name: str | None = None) -> tuple[str, OdooClient]:
     return instance_name, OdooClient(inst)
 
 
+# ── Helpers ─────────────────────────────────────────────────────────────────
+
+def _resolve_user_names(client: OdooClient, user_ids: list[int]) -> dict[int, str]:
+    """Return a {id: name} map for the given user IDs."""
+    if not user_ids:
+        return {}
+    users = client.read("res.users", user_ids, ["id", "name"])
+    return {u["id"]: u["name"] for u in users}
+
+
 # ── Tools ───────────────────────────────────────────────────────────────────
 
 @mcp.tool()
@@ -110,13 +120,15 @@ def list_tasks(
         ["id", "name", "stage_id", "user_ids", "project_id", "date_deadline", "priority"],
         limit=limit,
     )
+    all_user_ids = list({uid for t in tasks for uid in t.get("user_ids", [])})
+    user_names = _resolve_user_names(client, all_user_ids)
     return [
         {
             "id": t["id"],
             "name": t["name"],
             "project": t["project_id"][1] if t.get("project_id") else None,
             "stage": t["stage_id"][1] if t.get("stage_id") else None,
-            "assignees": [u[1] for u in t.get("user_ids", [])] if t.get("user_ids") else [],
+            "assignees": [user_names.get(uid, str(uid)) for uid in t.get("user_ids", [])],
             "deadline": t.get("date_deadline"),
             "priority": "high" if t.get("priority") == "1" else "normal",
         }
@@ -160,13 +172,14 @@ def get_task(task_id: int, instance: str | None = None) -> dict:
         tag_results = client.read("project.tags", t["tag_ids"], ["id", "name"])
         tags = [tag["name"] for tag in tag_results]
 
+    user_names = _resolve_user_names(client, t.get("user_ids", []))
     return {
         "id": t["id"],
         "name": t["name"],
         "description": t.get("description") or "",
         "project": t["project_id"][1] if t.get("project_id") else None,
         "stage": t["stage_id"][1] if t.get("stage_id") else None,
-        "assignees": [u[1] for u in t.get("user_ids", [])] if t.get("user_ids") else [],
+        "assignees": [user_names.get(uid, str(uid)) for uid in t.get("user_ids", [])],
         "deadline": t.get("date_deadline"),
         "priority": "high" if t.get("priority") == "1" else "normal",
         "tags": tags,
@@ -195,13 +208,15 @@ def search_tasks(query: str, project_id: int | None = None, instance: str | None
         ["id", "name", "stage_id", "project_id", "user_ids"],
         limit=50,
     )
+    all_user_ids = list({uid for t in tasks for uid in t.get("user_ids", [])})
+    user_names = _resolve_user_names(client, all_user_ids)
     return [
         {
             "id": t["id"],
             "name": t["name"],
             "project": t["project_id"][1] if t.get("project_id") else None,
             "stage": t["stage_id"][1] if t.get("stage_id") else None,
-            "assignees": [u[1] for u in t.get("user_ids", [])] if t.get("user_ids") else [],
+            "assignees": [user_names.get(uid, str(uid)) for uid in t.get("user_ids", [])],
         }
         for t in tasks
     ]
