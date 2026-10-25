@@ -1,14 +1,33 @@
 [default]
 instance = "local"
 
+# Global defaults. Any setting can be overridden in [instances.NAME.policy].
+[policy]
+read_only = false
+# disabled | read_only | full. This controls execute_kw, not dedicated workflow edits.
+general_mode = "read_only"
+# Omit general_models to allow reads on the built-in workflow/lookup models.
+# general_models = ["project.task", "res.partner"]
+require_explicit_instance = true
+max_records = 200
+timeout_seconds = 30
+
 [instances.local]
 url = "http://localhost:8069"
 database = "mydb"
-username = "admin"
-password = "admin"
+username = "mcp-user"
+password = "your-password-or-api-key"
+
+# Deliberate general override example. Public methods can have arbitrary side effects.
+# [instances.local.policy]
+# general_mode = "full"
+# general_models = ["*"]
 
 [instances.galaadh]
 url = "https://galaadh.example.com"
 database = "galaadh"
-username = "admin"
-password = "your-password-here"
+username = "mcp-user"
+password = "your-password-or-api-key"
+
+[instances.galaadh.policy]
+read_only = true
